@@ -14,51 +14,62 @@ def generate_initial_schedule(courses: List[Course], rooms: List[Room], time_slo
 
     return Schedule(assignments)
 
-def intersection_length(interval1: Tuple[int, int], interval2: Tuple[int, int]) -> int:
-    start1, end1 = interval1
-    start2, end2 = interval2
-    if end1 <= start2 or end2 <= start1:
-        return 0
-    return min(end1, end2) - max(start1, start2)
+def priority_weight(priority: int) -> int:
+    if priority == 1:
+        return 1.75
+    if priority == 2:
+        return 1.5
+    if priority == 3:
+        return 1.25
+    return 1
 
 def fitness(schedule: Schedule, students: List[Student]) -> int:
     penalty = 0
 
+    students_in_course: Dict[str, List[Student]] = {}
     for student in students:
-        for i in range(len(student.course_list)):
-            for j in range(i + 1, len(student.course_list)):
-                course_id_1 = student.course_list[i]
-                course_id_2 = student.course_list[j]
+        for course_id in student.course_list:
+            if course_id not in students_in_course:
+                students_in_course[course_id] = []
+            students_in_course[course_id].append(student)
 
-                assignments_1 = [a for a in schedule.assignments if a.course.course_id == course_id_1]
-                assignments_2 = [a for a in schedule.assignments if a.course.course_id == course_id_2]
+    for assignment in schedule.assignments:
+        course_id = assignment.course.course_id
 
-                for a1 in assignments_1:
-                    for a2 in assignments_2:
-                        interval1 = a1.time_slot.interval()
-                        interval2 = a2.time_slot.interval()
-                        penalty += intersection_length(interval1, interval2)
+        if course_id not in students_in_course:
+            continue
 
-    for i in range(len(schedule.assignments)):
-        for j in range(i + 1, len(schedule.assignments)):
-            a1 = schedule.assignments[i]
-            a2 = schedule.assignments[j]
+        penalty += 2 * max(0, len(students_in_course[course_id]) - assignment.room.capacity)
 
-            if a1.room.room_id == a2.room.room_id:
-                interval1 = a1.time_slot.interval()
-                interval2 = a2.time_slot.interval()
-                penalty += intersection_length(interval1, interval2)
+    for student in students:
+        filled: Set[int] = set()
 
-    for i in range(len(schedule.assignments)):
-        student_count = 0
-        for j in range(len(students)):
-            student = students[j]
-            a1 = schedule.assignments[i]
+        for course_id in student.course_list:
 
-            if a1.course.course_id in student.course_list:
-                student_count += 1
+            current_course_assignments = schedule.course_assignments[course_id]
+            for assignment in current_course_assignments:
+                if assignment.time_slot.hour_index() in filled:
+                    penalty += 1
+                else:
+                    filled.add(assignment.time_slot.hour_index())
+
+    room_time_courses: Dict[Tuple[str, int], List[str]] = {}
+
+    for assignment in schedule.assignments:
+        room_id = assignment.room.room_id
+        hour_index = assignment.time_slot.hour_index()
+        course_id = assignment.course.course_id
+        if (room_id, hour_index) not in room_time_courses:
+            room_time_courses[(room_id, hour_index)] = []
+        room_time_courses[(room_id, hour_index)].append(course_id)
+
+    for courses in room_time_courses.values():
+        if len(courses) == 1:
+            continue
         
-        if student_count > a1.room.capacity:
-            penalty += (student_count - a1.room.capacity)
+        for course_id in courses:
+            students = students_in_course[course_id]
+            for student in students:
+                penalty += priority_weight(student.priority_map[course_id])
 
     return penalty

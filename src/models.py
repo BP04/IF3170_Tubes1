@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 class Course:
     def __init__(self, course_id: str, num_students: int, credits: int):
@@ -7,17 +7,16 @@ class Course:
         self.credits = credits
 
 class TimeSlot:
-    def __init__(self, start_day: str, start_hour: int, end_day: str, end_hour: int):
-        self.start_day = start_day
-        self.start_hour = start_hour
-        self.end_day = end_day
-        self.end_hour = end_hour
+    # one time slot is one hour
+    # interval covers [hour, hour + 1) on that day
+    def __init__(self, day: str, hour: int):
+        self.day = day
+        self.hour = hour
 
-    def interval(self) -> Tuple[int, int]:
-        day_to_index = {'Senin': 0, 'Selasa': 1, 'Rabu': 2, 'Kamis': 3, 'Jumat': 4}
-        start = day_to_index[self.start_day] * 24 + self.start_hour
-        end = day_to_index[self.end_day] * 24 + self.end_hour
-        return (start, end)
+    def hour_index(self) -> int:
+        day_to_index: Dict[str, int] = {'Senin': 0, 'Selasa': 1, 'Rabu': 2, 'Kamis': 3, 'Jumat': 4}
+        hour_index = day_to_index[self.day] * 24 + self.hour
+        return hour_index
 
 class Room:
     def __init__(self, room_id: str, capacity: int):
@@ -25,10 +24,14 @@ class Room:
         self.capacity = capacity
 
 class Student:
-    def __init__(self, student_id: str, course_list: List[int], priority: List[int]):
+    def __init__(self, student_id: str, course_list: List[str], priority: List[int]):
         self.student_id = student_id
         self.course_list = course_list
         self.priority = priority
+
+        self.priority_map: Dict[str, int] = {}
+        for course_id, priority in zip(course_list, priority):
+            self.priority_map[course_id] = priority
 
 class Assignment:
     def __init__(self, course: Course, time_slot: TimeSlot, room: Room):
@@ -39,3 +42,10 @@ class Assignment:
 class Schedule:
     def __init__(self, assignments: List[Assignment]):
         self.assignments = assignments
+
+        self.course_assignments: Dict[str, List[Assignment]] = {} # course_id -> list of assignments
+        for assignment in assignments:
+            course_id = assignment.course.course_id
+            if course_id not in self.course_assignments:
+                self.course_assignments[course_id] = []
+            self.course_assignments[course_id].append(assignment)
