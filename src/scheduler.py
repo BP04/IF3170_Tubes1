@@ -72,4 +72,4 @@ def fitness(schedule: Schedule, students: List[Student]) -> int:
             for student in students:
                 penalty += priority_weight(student.priority_map[course_id])
 
-    return penalty
+    return -penalty
