@@ -1,14 +1,15 @@
 from models import *
-from typing import List, Dict, Tuple
-from random import choice
+from typing import List, Dict, Tuple, Set
+import random
+import copy
 
 def generate_initial_schedule(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
     assignments = []
 
     for course in courses:
         for _ in range(course.credits):
-            random_room = choice(rooms)
-            random_time_slot = choice(time_slots)
+            random_room = random.choice(rooms)
+            random_time_slot = random.choice(time_slots)
             assignment = Assignment(course, random_time_slot, random_room)
             assignments.append(assignment)
 
@@ -32,14 +33,6 @@ def fitness(schedule: Schedule, students: List[Student]) -> int:
             if course_id not in students_in_course:
                 students_in_course[course_id] = []
             students_in_course[course_id].append(student)
-
-    for assignment in schedule.assignments:
-        course_id = assignment.course.course_id
-
-        if course_id not in students_in_course:
-            continue
-
-        penalty += 2 * max(0, len(students_in_course[course_id]) - assignment.room.capacity)
 
     for student in students:
         filled: Set[int] = set()
@@ -73,3 +66,39 @@ def fitness(schedule: Schedule, students: List[Student]) -> int:
                 penalty += priority_weight(student.priority_map[course_id])
 
     return -penalty
+
+def generate_neighbor(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
+    new_schedule = copy.deepcopy(schedule)
+
+    type = random.random()
+    if type < 0.5:
+        # swap two assignments
+        index1, index2 = random.sample(range(len(new_schedule.assignments)), 2)
+        assignment1 = new_schedule.assignments[index1]
+        assignment2 = new_schedule.assignments[index2]
+        assignment1.room, assignment2.room = assignment2.room, assignment1.room
+        assignment1.time_slot, assignment2.time_slot = assignment2.time_slot, assignment1.time_slot
+    else:
+        # assign different room and time slot for an assignment
+        index = random.randint(0, len(new_schedule.assignments) - 1)
+        new_schedule.assignments[index].room = random.choice(rooms)
+        new_schedule.assignments[index].time_slot = random.choice(time_slots)
+
+    return new_schedule
+
+def initialize_population(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], population_size: int) -> List[Schedule]:
+    population = []
+
+    for _ in range(population_size):
+        population.append(generate_initial_schedule(courses, rooms, time_slots))
+
+    return population
+
+def evaluate_population(population: List[Schedule], students: List[Student]) -> List[Tuple[Schedule, int]]:
+    population_fitness = []
+
+    for schedule in population:
+        fitness_score = fitness(schedule, students)
+        population_fitness.append((schedule, fitness_score))
+    
+    return population_fitness
