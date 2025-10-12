@@ -4,41 +4,41 @@ from typing import Tuple, List
 from models import *
 from scheduler import *
 
-def selection(population_fitness: List[Tuple[Schedule, int]]) -> Schedule:
+def selection(population_fitness: List[Tuple[Schedule, float]]) -> Schedule:
     # using roulette wheel selection
-
-    max_absolute_fitness = 0
-    fitness_scores = []
-    for _, fitness in population_fitness:
-        max_absolute_fitness = max(max_absolute_fitness, abs(fitness))
-        fitness_scores.append(fitness)
     
-    total_fitness = 0
-    for i in range(len(fitness_scores)):
-        fitness_scores[i] += max_absolute_fitness + 1
-        total_fitness += fitness_scores[i]
+    fitness_scores = [fit for _, fit in population_fitness]
+    min_fitness = min(fitness_scores)
+    adjusted_scores = [(score - min_fitness) + 1 for score in fitness_scores]
+    total_fitness = sum(adjusted_scores)
 
-    pick = random.random()
+    if total_fitness == 0:
+        return random.choice(population_fitness)[0]
 
-    sum = 0
-    for i in range(len(fitness_scores)):
-        sum += fitness_scores[i]
-        if sum >= pick * total_fitness:
-            return population_fitness[i][0]
-
-    assert False
+    pick = random.uniform(0, total_fitness)
+    current = 0
+    for i, schedule_fitness in enumerate(population_fitness):
+        current += adjusted_scores[i]
+        if current > pick:
+            return schedule_fitness[0]
+    
+    return population_fitness[-1][0]
 
 def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]:
     child1 = copy.deepcopy(parent1)
     child2 = copy.deepcopy(parent2)
 
-    crossover_point = random.randint(0, len(parent1.assignments) - 1)
+    num_assignments = len(parent1.assignments)
+
+    if num_assignments < 2:
+        return child1, child2
+
+    crossover_point = random.randint(1, num_assignments - 1)
 
     for i in range(crossover_point):
-        child1.assignments[i].room, child2.assignments[i].room = child2.assignments[i].room, child1.assignments[i].room
-        child1.assignments[i].time_slot, child2.assignments[i].time_slot = child2.assignments[i].time_slot, child1.assignments[i].time_slot
+        child1.assignments[i], child2.assignments[i] = child2.assignments[i], child1.assignments[i]
     
-    return child1, child2
+    return Schedule(child1.assignments), Schedule(child2.assignments)
 
 def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
     return generate_neighbor(schedule, rooms, time_slots)
