@@ -1,54 +1,57 @@
 import math
 import random
 from copy import deepcopy
-from scheduler import fitness
+from scheduler import *
 
-def make_neighbor(schedule):
-    new_assignments = schedule.assignments.copy()
-    a1_idx, a2_idx = random.sample(range(len(new_assignments)), 2)
-    
-    new_assignments[a1_idx].time_slot, new_assignments[a2_idx].time_slot = (
-        new_assignments[a2_idx].time_slot,
-        new_assignments[a1_idx].time_slot,
-    )
-
-    from models import Schedule
-    return Schedule(new_assignments)
-
-def simulated_annealing(initial_schedule, students, time_slots, rooms,
-                        initial_temp=1000, cooling_rate=0.95, min_temp=1):
-    
-    current_schedule = deepcopy(initial_schedule)
-    current_fitness = fitness(current_schedule, students)
-    best_schedule = deepcopy(current_schedule)
+def simulated_annealing(
+    initial_schedule,  
+    students,          
+    time_slots,        
+    rooms,             
+    initial_temp=1000,
+    cooling_rate=0.95,
+    min_temp=1
+):
+    current = deepcopy(initial_schedule)
+    current_fitness = objective(current, students)
+    best = deepcopy(current)
     best_fitness = current_fitness
 
-    temperature = initial_temp
+    temp = initial_temp
     iteration = 0
+    
+    acceptance_probabilities = []
+    iterations_list = []
+    stuck_count = 0
+    last_improvement_iter = 0
 
-    print(f"Initial fitness: {current_fitness}")
-
-    while temperature > min_temp:
-        # Membuat tetangga random
-        neighbor = make_neighbor(current_schedule)
-
-        neighbor_fitness = fitness(neighbor, students)
+    while temp > min_temp:
+        neighbor = generate_neighbor(current, rooms, time_slots)
+        neighbor_fitness = objective(neighbor, students)
         delta = neighbor_fitness - current_fitness
 
-        # Aturan penerimaan, hitung peluang dulu, lalu random pilih 0-1 buat bandingin
-        if delta > 0 or random.random() < math.exp(delta / temperature):
-            current_schedule = neighbor
+        if delta > 0:
+            accept_prob = 1.0
+            acceptance_probabilities.append(accept_prob)
+        else:
+            accept_prob = math.exp(delta / temp)
+            acceptance_probabilities.append(accept_prob)
+        
+        iterations_list.append(iteration)
+
+        if delta > 0 or random.random() < math.exp(delta / temp):
+            current = neighbor
             current_fitness = neighbor_fitness
-
             if current_fitness > best_fitness:
-                best_schedule = deepcopy(current_schedule)
+                best = deepcopy(current)
                 best_fitness = current_fitness
+                last_improvement_iter = iteration
 
-        temperature *= cooling_rate
+        if iteration - last_improvement_iter >= 100:
+            stuck_count += 1
+            last_improvement_iter = iteration
+
+        temp *= cooling_rate
         iteration += 1
 
-        if iteration % 100 == 0:
-            print(f"Iter {iteration} | Temp={temperature:.2f} | BestFitness={best_fitness}")
-
-    print(f"Final best fitness: {best_fitness}")
-    return best_schedule, best_fitness
+    return best, best_fitness, acceptance_probabilities, iterations_list, stuck_count

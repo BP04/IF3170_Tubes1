@@ -25,7 +25,6 @@ def priority_weight(priority: int) -> float:
 def objective(schedule: Schedule, students: List[Student]) -> float:
     penalty = 0.0
 
-    # Caching for students in each course
     students_in_course: Dict[str, List[Student]] = {}
     for student in students:
         for course_id in student.course_list:
@@ -33,7 +32,7 @@ def objective(schedule: Schedule, students: List[Student]) -> float:
                 students_in_course[course_id] = []
             students_in_course[course_id].append(student)
 
-    # PENALTY RULE #1: Time conflicts for each student
+    # PENALTI 1: Konflik waktu untuk setiap mahasiswa
     for student in students:
         filled: Set[int] = set()
         for course_id in student.course_list:
@@ -44,7 +43,7 @@ def objective(schedule: Schedule, students: List[Student]) -> float:
                     else:
                         filled.add(assignment.time_slot.hour_index())
 
-    # PENALTY RULE #2: Clashing meetings in the same Room and Time
+    # PENALTI 2: Pertemuan bertabrakan di ruangan dan waktu yang sama
     room_time_courses: Dict[Tuple[str, int], List[str]] = {}
     for assignment in schedule.assignments:
         key = (assignment.room.room_id, assignment.time_slot.hour_index())
@@ -59,7 +58,7 @@ def objective(schedule: Schedule, students: List[Student]) -> float:
                     for student in students_in_course[course_id]:
                         penalty += priority_weight(student.priority_map.get(course_id, 0))
                         
-    # PENALTY RULE #3: Room capacity exceeded
+    # PENALTI 3: Kapasitas ruangan terlampaui (FIXED - sekarang dikali dengan SKS)
     processed_assignments = set()
     for assignment in schedule.assignments:
         course = assignment.course
@@ -67,7 +66,7 @@ def objective(schedule: Schedule, students: List[Student]) -> float:
         assignment_id = (course.course_id, room.room_id, assignment.time_slot.hour_index())
         
         if course.num_students > room.capacity and assignment_id not in processed_assignments:
-            penalty += (course.num_students - room.capacity)
+            penalty += (course.num_students - room.capacity) * course.credits
             processed_assignments.add(assignment_id)
 
     return -penalty

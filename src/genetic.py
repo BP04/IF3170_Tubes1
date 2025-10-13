@@ -1,6 +1,6 @@
 import copy
 import random
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from models import *
 from scheduler import *
 
@@ -43,11 +43,28 @@ def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]
 def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
     return generate_neighbor(schedule, rooms, time_slots)
 
-def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], population_size: int, generations: int) -> Schedule:
+def genetic_algorithm(
+    courses: List[Course], 
+    rooms: List[Room], 
+    time_slots: List[TimeSlot], 
+    students: List[Student], 
+    population_size: int, 
+    generations: int
+) -> Tuple[Schedule, Dict[str, List[float]]]:
+    
     population = initialize_population(courses, rooms, time_slots, population_size)
     population_objective = evaluate_population(population, students)
 
-    for _ in range(generations):
+    max_fitness_history = []
+    avg_fitness_history = []
+    min_fitness_history = []
+
+    for generation in range(generations):
+        fitness_values = [fit for _, fit in population_objective]
+        max_fitness_history.append(max(fitness_values))
+        avg_fitness_history.append(sum(fitness_values) / len(fitness_values))
+        min_fitness_history.append(min(fitness_values))
+
         new_population = []
 
         for _ in range(population_size // 2):
@@ -66,9 +83,20 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
         population = new_population
         population_objective = evaluate_population(population, students)
 
+    fitness_values = [fit for _, fit in population_objective]
+    max_fitness_history.append(max(fitness_values))
+    avg_fitness_history.append(sum(fitness_values) / len(fitness_values))
+    min_fitness_history.append(min(fitness_values))
+
     max_objective_index = 0
     for i in range(len(population_objective)):
         if population_objective[i][1] > population_objective[max_objective_index][1]:
             max_objective_index = i
 
-    return population_objective[max_objective_index][0]
+    statistics = {
+        'max_fitness': max_fitness_history,
+        'avg_fitness': avg_fitness_history,
+        'min_fitness': min_fitness_history
+    }
+
+    return population_objective[max_objective_index][0], statistics
