@@ -14,7 +14,7 @@ class TimeSlot:
         self.hour = hour
 
     def hour_index(self) -> int:
-        day_to_index: Dict[str, int] = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4}
+        day_to_index: Dict[str, int] = {'Senin': 0, 'Selasa': 1, 'Rabu': 2, 'Kamis': 3, 'Jumat': 4}
         hour_index = day_to_index[self.day] * 24 + self.hour
         return hour_index
 
