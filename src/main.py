@@ -71,6 +71,7 @@ def run_genetic_algorithm(courses, rooms, time_slots, students):
 def main():
     courses, rooms, students = load_data_from_json('../data/input.json')
     time_slots = [TimeSlot(day, hour) for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] for hour in range(8, 17)]
+    initial_schedule = generate_initial_schedule(courses, rooms, time_slots)
     
     while True:
         print("\n" + "~"*75)
@@ -85,6 +86,11 @@ def main():
         print("  6. Run All Algorithms Sequentially")
         print("  7. Exit")
         print("~"*75)
+        
+        print()
+        print("Initial State:")
+        visualize_schedule(initial_schedule, rooms)
+        print()
 
         choice = input("Enter your choice (1-7): ")
 
@@ -105,7 +111,7 @@ def main():
             run_random_restart(courses, rooms, time_slots, students)
             run_genetic_algorithm(courses, rooms, time_slots, students)
         elif choice == '7':
-            print("Thank you for using this program. See you next time!")
+            print("Thank you for using this program. See you next time!" + "\n")
             break
         else:
             print("Invalid choice. Please enter a number between 1 and 7.")
