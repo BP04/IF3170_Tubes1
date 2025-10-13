@@ -22,7 +22,7 @@ def priority_weight(priority: int) -> float:
         return 1.25
     return 1.0
 
-def fitness(schedule: Schedule, students: List[Student]) -> float:
+def objective(schedule: Schedule, students: List[Student]) -> float:
     penalty = 0.0
 
     # Caching for students in each course
@@ -104,10 +104,10 @@ def initialize_population(courses: List[Course], rooms: List[Room], time_slots: 
     return population
 
 def evaluate_population(population: List[Schedule], students: List[Student]) -> List[Tuple[Schedule, float]]:
-    population_fitness = []
+    population_objective = []
     
     for schedule in population:
-        fitness_score = fitness(schedule, students)
-        population_fitness.append((schedule, fitness_score))
+        objective_score = objective(schedule, students)
+        population_objective.append((schedule, objective_score))
         
-    return population_fitness
+    return population_objective

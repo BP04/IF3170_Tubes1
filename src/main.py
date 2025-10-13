@@ -16,7 +16,7 @@ def run_steepest_ascent(courses, rooms, time_slots, students):
         courses, rooms, time_slots, students, max_iterations=1000, neighbors_to_check=50
     )
     print(f"\nFinal Result:")
-    print(f"  - Final Fitness: {fitness(final_schedule, students):.2f}")
+    print(f"  - Final objective: {objective(final_schedule, students):.2f}")
     print(f"  - Iterations until stop: {iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
@@ -27,7 +27,7 @@ def run_stochastic(courses, rooms, time_slots, students):
         courses, rooms, time_slots, students, max_iterations=2000
     )
     print(f"\nFinal Result:")
-    print(f"  - Final Fitness: {fitness(final_schedule, students):.2f}")
+    print(f"  - Final objective: {objective(final_schedule, students):.2f}")
     print(f"  - Iterations until stop: {iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
@@ -38,7 +38,7 @@ def run_sideways_moves(courses, rooms, time_slots, students):
         courses, rooms, time_slots, students, max_iterations=1000, max_sideways_moves=100
     )
     print(f"\nFinal Result:")
-    print(f"  - Final Fitness: {fitness(final_schedule, students):.2f}")
+    print(f"  - Final objective: {objective(final_schedule, students):.2f}")
     print(f"  - Iterations until stop: {iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
@@ -49,7 +49,7 @@ def run_random_restart(courses, rooms, time_slots, students):
         courses, rooms, time_slots, students, num_restarts=5, max_iter_per_restart=200
     )
     print(f"\nFinal Result:")
-    print(f"  - Global Best Fitness: {fitness(final_schedule, students):.2f}")
+    print(f"  - Global Best objective: {objective(final_schedule, students):.2f}")
     print(f"  - Number of Restarts: {num_restarts}")
     print(f"  - Total Iterations (sum over all restarts): {total_iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
@@ -63,7 +63,7 @@ def run_genetic_algorithm(courses, rooms, time_slots, students):
     duration = time.time() - start_time
 
     print(f"\nFinal Result:")
-    print(f"  - Final Fitness: {fitness(final_schedule, students):.2f}")
+    print(f"  - Final objective: {objective(final_schedule, students):.2f}")
     print(f"  - Population Size: 100, Generations: 100")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
