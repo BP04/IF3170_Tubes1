@@ -1,89 +1,126 @@
-import copy
-import random
-from typing import Tuple, List, Dict
+import time
 from models import *
-from scheduler import *
+from scheduler import objective, generate_initial_schedule, generate_neighbor
+from typing import List, Tuple
 
-def selection(population_objective: List[Tuple[Schedule, float]]) -> Schedule:
-    # using roulette wheel selection
-
-    max_absolute_objective: float = 0.0
-    objective_scores: List[float] = []
-    for _, objective_value in population_objective:
-        max_absolute_objective = max(max_absolute_objective, abs(objective_value))
-        objective_scores.append(objective_value)
+def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int, neighbors_to_check: int) -> Tuple[Schedule, List[float], int, float]:
+    start_time: float = time.time()
     
-    total_objective: float = 0.0
-    for i in range(len(objective_scores)):
-        objective_scores[i] += max_absolute_objective + 1
-        total_objective += objective_scores[i]
-
-    pick: float = random.random()
-
-    sum: float = 0.0
-    for i in range(len(objective_scores)):
-        sum += objective_scores[i]
-        if sum >= pick * total_objective:
-            return population_objective[i][0]
-
-    assert False
-
-def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]:
-    child1: Schedule = copy.deepcopy(parent1)
-    child2: Schedule = copy.deepcopy(parent2)
-
-    crossover_point: int = random.randint(0, len(parent1.assignments) - 1)
-
-    for i in range(crossover_point):
-        child1.assignments[i].room, child2.assignments[i].room = child2.assignments[i].room, child1.assignments[i].room
-        child1.assignments[i].time_slot, child2.assignments[i].time_slot = child2.assignments[i].time_slot, child1.assignments[i].time_slot
+    current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    current_objective: float = objective(current_schedule, students)
+    objective_history: List[float] = [current_objective]
     
-    return child1, child2
+    iterations: int = 0
+    for i in range(max_iterations):
+        iterations = i + 1
+        best_neighbor: Schedule | None = None
+        best_neighbor_objective: float = -float('inf')
 
-def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
-    return generate_neighbor(schedule, rooms, time_slots)
+        for _ in range(neighbors_to_check):
+            neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
+            neighbor_objective: float = objective(neighbor, students)
+            if neighbor_objective > best_neighbor_objective:
+                best_neighbor = neighbor
+                best_neighbor_objective = neighbor_objective
+        
+        if best_neighbor_objective > current_objective:
+            current_schedule = best_neighbor  # type: ignore
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+        else:
+            print(f"-> Steepest-Ascent: Local optimum reached at iteration {iterations}.")
+            break
 
-def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
-    population: List[Schedule] = initialize_population(courses, rooms, time_slots, population_size)
-    population_objective: List[Tuple[Schedule, float]] = evaluate_population(population, students)
+    duration: float = time.time() - start_time
+    return current_schedule, objective_history, iterations, duration
 
-    max_objective_history: List[float] = []
-    avg_objective_history: List[float] = []
+def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int) -> Tuple[Schedule, List[float], int, float]:
+    start_time: float = time.time()
 
-    for _ in range(generations):
-        # Track statistics
-        objective_values: List[float] = [obj for _, obj in population_objective]
-        max_objective_history.append(max(objective_values))
-        avg_objective_history.append(sum(objective_values) / len(objective_values))
+    current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    current_objective: float = objective(current_schedule, students)
+    objective_history: List[float] = [current_objective]
 
-        new_population: List[Schedule] = []
+    iterations: int = 0
+    for i in range(max_iterations):
+        iterations = i + 1
+        
+        neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
+        neighbor_objective: float = objective(neighbor, students)
 
-        for _ in range(population_size // 2):
-            parent1: Schedule = selection(population_objective)
-            parent2: Schedule = selection(population_objective)
+        if neighbor_objective > current_objective:
+            current_schedule = neighbor
+            current_objective = neighbor_objective
+            objective_history.append(current_objective)
 
-            child1: Schedule
-            child2: Schedule
-            child1, child2 = crossover(parent1, parent2)
+    duration: float = time.time() - start_time
+    return current_schedule, objective_history, iterations, duration
 
-            child1 = mutation(child1, rooms, time_slots)
-            child2 = mutation(child2, rooms, time_slots)
+def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
+    start_time: float = time.time()
 
-            new_population.append(child1)
-            if len(new_population) < population_size:
-                new_population.append(child2)
+    current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    current_objective: float = objective(current_schedule, students)
+    objective_history: List[float] = [current_objective]
+    
+    sideways_moves_count: int = 0
+    iterations: int = 0
+    for i in range(max_iterations):
+        iterations = i + 1
+        best_neighbor: Schedule | None = None
+        best_neighbor_objective: float = -float('inf')
 
-        population = new_population
-        population_objective = evaluate_population(population, students)
+        for _ in range(50):
+            neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
+            neighbor_objective: float = objective(neighbor, students)
+            if neighbor_objective > best_neighbor_objective:
+                best_neighbor = neighbor
+                best_neighbor_objective = neighbor_objective
+        
+        if best_neighbor_objective > current_objective:
+            current_schedule = best_neighbor  # type: ignore
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+            sideways_moves_count = 0
+        elif best_neighbor_objective == current_objective and sideways_moves_count < max_sideways_moves:
+            current_schedule = best_neighbor  # type: ignore
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+            sideways_moves_count += 1
+        else:
+            print(f"-> Sideways-Move: Optimum reached or sideways limit exceeded at iteration {iterations}.")
+            break
 
-    max_objective_index: int = 0
-    for i in range(len(population_objective)):
-        if population_objective[i][1] > population_objective[max_objective_index][1]:
-            max_objective_index = i
+    duration: float = time.time() - start_time
+    return current_schedule, objective_history, iterations, duration
 
-    statistics: Dict[str, List[float]] = {
-        'max_objective': max_objective_history,
-        'avg_objective': avg_objective_history
-    }
-
-    return population_objective[max_objective_index][0], statistics
+def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], num_restarts: int, max_iter_per_restart: int) -> Tuple[Schedule, List[float], int, float, int]:
+    start_time: float = time.time()
+    
+    global_best_schedule: Schedule | None = None
+    global_best_objective: float = -float('inf')
+    total_iterations: int = 0
+    
+    print(f"Starting Random-Restart Hill-Climbing with {num_restarts} restarts.")
+    for i in range(num_restarts):
+        print(f"  -> Restart #{i + 1}/{num_restarts}...")
+        
+        schedule: Schedule
+        _: List[float]
+        iterations: int
+        schedule, _, iterations, _ = steepest_ascent_hill_climbing(
+            courses, rooms, time_slots, students, 
+            max_iterations=max_iter_per_restart, 
+            neighbors_to_check=50
+        )
+        
+        current_objective: float = objective(schedule, students)
+        total_iterations += iterations
+        
+        if current_objective > global_best_objective:
+            global_best_objective = current_objective
+            global_best_schedule = schedule
+            print(f"  -> New global best found with objective: {global_best_objective:.2f}")
+    
+    duration: float = time.time() - start_time
+    return global_best_schedule, [], total_iterations, duration, num_restarts  # type: ignore
