@@ -34,7 +34,7 @@ def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
-def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int) -> Tuple[Schedule, List[float], int, float]:
+def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, max_stuck_iterations: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
 
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
@@ -42,6 +42,8 @@ def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slot
     objective_history: List[float] = [current_objective]
 
     iterations: int = 0
+    stuck_count: int = 0
+
     for i in range(max_iterations):
         iterations = i + 1
         
@@ -52,6 +54,13 @@ def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slot
             current_schedule = neighbor
             current_objective = neighbor_objective
             objective_history.append(current_objective)
+            stuck_count = 0
+        else:
+            stuck_count += 1
+
+        if stuck_count >= max_stuck_iterations:
+            print(f"-> Stochastic: Local optimum reached after {stuck_count} iterations without improvement.")
+            break
 
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
@@ -78,12 +87,13 @@ def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], 
                 best_neighbor_objective = neighbor_objective
         
         if best_neighbor_objective > current_objective:
-            current_schedule = best_neighbor  # type: ignore
+            assert best_neighbor is not None # make sure best_neighbor is not None before use
+            current_schedule = best_neighbor
             current_objective = best_neighbor_objective
             objective_history.append(current_objective)
             sideways_moves_count = 0
         elif best_neighbor_objective == current_objective and sideways_moves_count < max_sideways_moves:
-            current_schedule = best_neighbor  # type: ignore
+            assert best_neighbor is not None # make sure best_neighbor is not None before use
             current_objective = best_neighbor_objective
             objective_history.append(current_objective)
             sideways_moves_count += 1
@@ -100,6 +110,7 @@ def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_
     global_best_schedule: Schedule | None = None
     global_best_objective: float = -float('inf')
     total_iterations: int = 0
+    objective_history_per_restart: List[float] = []
     
     print(f"Starting Random-Restart Hill-Climbing with {num_restarts} restarts.")
     for i in range(num_restarts):
@@ -121,6 +132,8 @@ def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_
             global_best_objective = current_objective
             global_best_schedule = schedule
             print(f"  -> New global best found with objective: {global_best_objective:.2f}")
+            
+        objective_history_per_restart.append(global_best_objective)
     
     duration: float = time.time() - start_time
-    return global_best_schedule, [], total_iterations, duration, num_restarts  # type: ignore
+    return global_best_schedule, objective_history_per_restart, total_iterations, duration, num_restarts  # type: ignore

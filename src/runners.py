@@ -70,7 +70,7 @@ def run_stochastic(courses: List[Course], rooms: List[Room], time_slots: List[Ti
     iters: int
     duration: float
     final_schedule, obj_history, iters, duration = stochastic_hill_climbing(
-        courses, rooms, time_slots, students, lecturers, max_iterations=2000
+        courses, rooms, time_slots, students, lecturers, max_iterations=2000, max_stuck_iterations=100
     )
     print(f"\nFinal Result:")
     print(f"  - Final objective: {objective(final_schedule, students, lecturers):.2f}")
@@ -103,7 +103,7 @@ def run_random_restart(courses: List[Course], rooms: List[Room], time_slots: Lis
     duration: float
     num_restarts: int
     final_schedule, obj_history, total_iters, duration, num_restarts = random_restart_hill_climbing(
-        courses, rooms, time_slots, students, lecturers, num_restarts=5, max_iter_per_restart=200
+        courses, rooms, time_slots, students, lecturers, num_restarts=20, max_iter_per_restart=500
     )
     print(f"\nFinal Result:")
     print(f"  - Global Best objective: {objective(final_schedule, students, lecturers):.2f}")
