@@ -1,7 +1,11 @@
 from typing import Tuple, List, Dict
 
 class Course:
-    def __init__(self, course_id: str, num_students: int, credits: int):
+    course_id: str
+    num_students: int
+    credits: int
+    
+    def __init__(self, course_id: str, num_students: int, credits: int) -> None:
         self.course_id = course_id
         self.num_students = num_students
         self.credits = credits
@@ -9,7 +13,10 @@ class Course:
 class TimeSlot:
     # one time slot is one hour
     # interval covers [hour, hour + 1) on that day
-    def __init__(self, day: str, hour: int):
+    day: str
+    hour: int
+    
+    def __init__(self, day: str, hour: int) -> None:
         self.day = day
         self.hour = hour
 
@@ -19,33 +26,48 @@ class TimeSlot:
         return hour_index
 
 class Room:
-    def __init__(self, room_id: str, capacity: int):
+    room_id: str
+    capacity: int
+    
+    def __init__(self, room_id: str, capacity: int) -> None:
         self.room_id = room_id
         self.capacity = capacity
 
 class Student:
-    def __init__(self, student_id: str, course_list: List[str], priority: List[int]):
+    student_id: str
+    course_list: List[str]
+    priority: List[int]
+    priority_map: Dict[str, int]
+    
+    def __init__(self, student_id: str, course_list: List[str], priority: List[int]) -> None:
         self.student_id = student_id
         self.course_list = course_list
         self.priority = priority
 
-        self.priority_map: Dict[str, int] = {}
-        for course_id, priority in zip(course_list, priority):
-            self.priority_map[course_id] = priority
+        self.priority_map = {}
+        for course_id, priority_val in zip(course_list, priority):
+            self.priority_map[course_id] = priority_val
 
 class Assignment:
-    def __init__(self, course: Course, time_slot: TimeSlot, room: Room):
+    course: Course
+    time_slot: TimeSlot
+    room: Room
+    
+    def __init__(self, course: Course, time_slot: TimeSlot, room: Room) -> None:
         self.course = course
         self.time_slot = time_slot
         self.room = room
 
 class Schedule:
-    def __init__(self, assignments: List[Assignment]):
+    assignments: List[Assignment]
+    course_assignments: Dict[str, List[Assignment]]
+    
+    def __init__(self, assignments: List[Assignment]) -> None:
         self.assignments = assignments
 
-        self.course_assignments: Dict[str, List[Assignment]] = {} # course_id -> list of assignments
+        self.course_assignments = {}  # course_id -> list of assignments
         for assignment in assignments:
-            course_id = assignment.course.course_id
+            course_id: str = assignment.course.course_id
             if course_id not in self.course_assignments:
                 self.course_assignments[course_id] = []
             self.course_assignments[course_id].append(assignment)
