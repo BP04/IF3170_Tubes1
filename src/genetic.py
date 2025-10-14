@@ -6,71 +6,64 @@ from scheduler import *
 
 def selection(population_objective: List[Tuple[Schedule, float]]) -> Schedule:
     # using roulette wheel selection
-    
-    objective_scores = [fit for _, fit in population_objective]
-    min_objective = min(objective_scores)
-    adjusted_scores = [(score - min_objective) + 1 for score in objective_scores]
-    total_objective = sum(adjusted_scores)
 
-    if total_objective == 0:
-        return random.choice(population_objective)[0]
-
-    pick = random.uniform(0, total_objective)
-    current = 0
-    for i, schedule_objective in enumerate(population_objective):
-        current += adjusted_scores[i]
-        if current > pick:
-            return schedule_objective[0]
+    max_absolute_objective: float = 0.0
+    objective_scores: List[float] = []
+    for _, objective_value in population_objective:
+        max_absolute_objective = max(max_absolute_objective, abs(objective_value))
+        objective_scores.append(objective_value)
     
-    return population_objective[-1][0]
+    total_objective: float = 0.0
+    for i in range(len(objective_scores)):
+        objective_scores[i] += max_absolute_objective + 1
+        total_objective += objective_scores[i]
+
+    pick: float = random.random()
+
+    sum: float = 0.0
+    for i in range(len(objective_scores)):
+        sum += objective_scores[i]
+        if sum >= pick * total_objective:
+            return population_objective[i][0]
+
+    assert False
 
 def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]:
-    child1 = copy.deepcopy(parent1)
-    child2 = copy.deepcopy(parent2)
+    child1: Schedule = copy.deepcopy(parent1)
+    child2: Schedule = copy.deepcopy(parent2)
 
-    num_assignments = len(parent1.assignments)
-
-    if num_assignments < 2:
-        return child1, child2
-
-    crossover_point = random.randint(1, num_assignments - 1)
+    crossover_point: int = random.randint(0, len(parent1.assignments) - 1)
 
     for i in range(crossover_point):
-        child1.assignments[i], child2.assignments[i] = child2.assignments[i], child1.assignments[i]
+        child1.assignments[i].room, child2.assignments[i].room = child2.assignments[i].room, child1.assignments[i].room
+        child1.assignments[i].time_slot, child2.assignments[i].time_slot = child2.assignments[i].time_slot, child1.assignments[i].time_slot
     
-    return Schedule(child1.assignments), Schedule(child2.assignments)
+    return child1, child2
 
 def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
     return generate_neighbor(schedule, rooms, time_slots)
 
-def genetic_algorithm(
-    courses: List[Course], 
-    rooms: List[Room], 
-    time_slots: List[TimeSlot], 
-    students: List[Student], 
-    population_size: int, 
-    generations: int
-) -> Tuple[Schedule, Dict[str, List[float]]]:
-    
-    population = initialize_population(courses, rooms, time_slots, population_size)
-    population_objective = evaluate_population(population, students)
+def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
+    population: List[Schedule] = initialize_population(courses, rooms, time_slots, population_size)
+    population_objective: List[Tuple[Schedule, float]] = evaluate_population(population, students)
 
-    max_fitness_history = []
-    avg_fitness_history = []
-    min_fitness_history = []
+    max_objective_history: List[float] = []
+    avg_objective_history: List[float] = []
 
-    for generation in range(generations):
-        fitness_values = [fit for _, fit in population_objective]
-        max_fitness_history.append(max(fitness_values))
-        avg_fitness_history.append(sum(fitness_values) / len(fitness_values))
-        min_fitness_history.append(min(fitness_values))
+    for _ in range(generations):
+        # Track statistics
+        objective_values: List[float] = [obj for _, obj in population_objective]
+        max_objective_history.append(max(objective_values))
+        avg_objective_history.append(sum(objective_values) / len(objective_values))
 
-        new_population = []
+        new_population: List[Schedule] = []
 
         for _ in range(population_size // 2):
-            parent1 = selection(population_objective)
-            parent2 = selection(population_objective)
+            parent1: Schedule = selection(population_objective)
+            parent2: Schedule = selection(population_objective)
 
+            child1: Schedule
+            child2: Schedule
             child1, child2 = crossover(parent1, parent2)
 
             child1 = mutation(child1, rooms, time_slots)
@@ -83,20 +76,14 @@ def genetic_algorithm(
         population = new_population
         population_objective = evaluate_population(population, students)
 
-    fitness_values = [fit for _, fit in population_objective]
-    max_fitness_history.append(max(fitness_values))
-    avg_fitness_history.append(sum(fitness_values) / len(fitness_values))
-    min_fitness_history.append(min(fitness_values))
-
-    max_objective_index = 0
+    max_objective_index: int = 0
     for i in range(len(population_objective)):
         if population_objective[i][1] > population_objective[max_objective_index][1]:
             max_objective_index = i
 
-    statistics = {
-        'max_fitness': max_fitness_history,
-        'avg_fitness': avg_fitness_history,
-        'min_fitness': min_fitness_history
+    statistics: Dict[str, List[float]] = {
+        'max_objective': max_objective_history,
+        'avg_objective': avg_objective_history
     }
 
     return population_objective[max_objective_index][0], statistics

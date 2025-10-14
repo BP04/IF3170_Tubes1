@@ -2,34 +2,30 @@ import math
 import random
 from copy import deepcopy
 from scheduler import *
+from typing import List, Tuple
 
-def simulated_annealing(
-    initial_schedule,  
-    students,          
-    time_slots,        
-    rooms,             
-    initial_temp=1000,
-    cooling_rate=0.95,
-    min_temp=1
-):
-    current = deepcopy(initial_schedule)
-    current_fitness = objective(current, students)
-    best = deepcopy(current)
-    best_fitness = current_fitness
+def simulated_annealing(initial_schedule: Schedule, students: List[Student], time_slots: List[TimeSlot],
+                        rooms: List[Room], initial_temp: float = 1000, cooling_rate: float = 0.95,
+                        min_temp: float = 1) -> Tuple[Schedule, float, List[float], List[int], int]:
+    current: Schedule = deepcopy(initial_schedule)
+    current_objective: float = objective(current, students)
+    best: Schedule = deepcopy(current)
+    best_objective: float = current_objective
 
-    temp = initial_temp
-    iteration = 0
+    temp: float = initial_temp
+    iteration: int = 0
     
-    acceptance_probabilities = []
-    iterations_list = []
-    stuck_count = 0
-    last_improvement_iter = 0
+    acceptance_probabilities: List[float] = []
+    iterations_list: List[int] = []
+    stuck_count: int = 0
+    last_improvement_iter: int = 0
 
     while temp > min_temp:
-        neighbor = generate_neighbor(current, rooms, time_slots)
-        neighbor_fitness = objective(neighbor, students)
-        delta = neighbor_fitness - current_fitness
+        neighbor: Schedule = generate_neighbor(current, rooms, time_slots)
+        neighbor_objective: float = objective(neighbor, students)
+        delta: float = neighbor_objective - current_objective
 
+        accept_prob: float
         if delta > 0:
             accept_prob = 1.0
             acceptance_probabilities.append(accept_prob)
@@ -41,10 +37,10 @@ def simulated_annealing(
 
         if delta > 0 or random.random() < math.exp(delta / temp):
             current = neighbor
-            current_fitness = neighbor_fitness
-            if current_fitness > best_fitness:
+            current_objective = neighbor_objective
+            if current_objective > best_objective:
                 best = deepcopy(current)
-                best_fitness = current_fitness
+                best_objective = current_objective
                 last_improvement_iter = iteration
 
         if iteration - last_improvement_iter >= 100:
@@ -54,4 +50,4 @@ def simulated_annealing(
         temp *= cooling_rate
         iteration += 1
 
-    return best, best_fitness, acceptance_probabilities, iterations_list, stuck_count
+    return best, best_objective, acceptance_probabilities, iterations_list, stuck_count

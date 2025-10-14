@@ -4,13 +4,15 @@ import random
 import copy
 
 def generate_initial_schedule(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
-    assignments = []
+    assignments: List[Assignment] = []
+
     for course in courses:
         for _ in range(course.credits):
-            random_room = random.choice(rooms)
-            random_time_slot = random.choice(time_slots)
-            assignment = Assignment(course, random_time_slot, random_room)
+            random_room: Room = random.choice(rooms)
+            random_time_slot: TimeSlot = random.choice(time_slots)
+            assignment: Assignment = Assignment(course, random_time_slot, random_room)
             assignments.append(assignment)
+
     return Schedule(assignments)
 
 def priority_weight(priority: int) -> float:
@@ -32,81 +34,74 @@ def objective(schedule: Schedule, students: List[Student]) -> float:
                 students_in_course[course_id] = []
             students_in_course[course_id].append(student)
 
-    # PENALTI 1: Konflik waktu untuk setiap mahasiswa
     for student in students:
         filled: Set[int] = set()
+
         for course_id in student.course_list:
-            if course_id in schedule.course_assignments:
-                for assignment in schedule.course_assignments[course_id]:
-                    if assignment.time_slot.hour_index() in filled:
-                        penalty += 1
-                    else:
-                        filled.add(assignment.time_slot.hour_index())
 
-    # PENALTI 2: Pertemuan bertabrakan di ruangan dan waktu yang sama
+            current_course_assignments: List[Assignment] = schedule.course_assignments[course_id]
+            for assignment in current_course_assignments:
+                hour_idx: int = assignment.time_slot.hour_index()
+                if hour_idx in filled:
+                    penalty += 1
+                else:
+                    filled.add(hour_idx)
+
     room_time_courses: Dict[Tuple[str, int], List[str]] = {}
-    for assignment in schedule.assignments:
-        key = (assignment.room.room_id, assignment.time_slot.hour_index())
-        if key not in room_time_courses:
-            room_time_courses[key] = []
-        room_time_courses[key].append(assignment.course.course_id)
 
-    for courses_in_slot in room_time_courses.values():
-        if len(courses_in_slot) > 1:
-            for course_id in courses_in_slot:
-                if course_id in students_in_course:
-                    for student in students_in_course[course_id]:
-                        penalty += priority_weight(student.priority_map.get(course_id, 0))
-                        
-    # PENALTI 3: Kapasitas ruangan terlampaui (FIXED - sekarang dikali dengan SKS)
-    processed_assignments = set()
     for assignment in schedule.assignments:
-        course = assignment.course
-        room = assignment.room
-        assignment_id = (course.course_id, room.room_id, assignment.time_slot.hour_index())
+        room_id: str = assignment.room.room_id
+        hour_index: int = assignment.time_slot.hour_index()
+        course_id: str = assignment.course.course_id
+        if (room_id, hour_index) not in room_time_courses:
+            room_time_courses[(room_id, hour_index)] = []
+        room_time_courses[(room_id, hour_index)].append(course_id)
+
+    for courses_list in room_time_courses.values():
+        if len(courses_list) == 1:
+            continue
         
-        if course.num_students > room.capacity and assignment_id not in processed_assignments:
-            penalty += (course.num_students - room.capacity) * course.credits
-            processed_assignments.add(assignment_id)
+        for course_id in courses_list:
+            students_list: List[Student] = students_in_course[course_id]
+            for student in students_list:
+                penalty += priority_weight(student.priority_map[course_id])
 
     return -penalty
 
 def generate_neighbor(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
-    new_schedule = copy.deepcopy(schedule)
-    num_assignments = len(new_schedule.assignments)
+    new_schedule: Schedule = copy.deepcopy(schedule)
 
-    if num_assignments < 1:
-        return new_schedule 
-
-    can_swap = num_assignments >= 2
-    move_type = random.random() if can_swap else 1.0 
-
-    if move_type < 0.5 and can_swap:
-        index1, index2 = random.sample(range(num_assignments), 2)
-        assignment1 = new_schedule.assignments[index1]
-        assignment2 = new_schedule.assignments[index2]
+    mutation_type: float = random.random()
+    if mutation_type < 0.5:
+        # swap two assignments
+        index1: int
+        index2: int
+        index1, index2 = random.sample(range(len(new_schedule.assignments)), 2)
+        assignment1: Assignment = new_schedule.assignments[index1]
+        assignment2: Assignment = new_schedule.assignments[index2]
         assignment1.room, assignment2.room = assignment2.room, assignment1.room
         assignment1.time_slot, assignment2.time_slot = assignment2.time_slot, assignment1.time_slot
     else:
-        index = random.randint(0, num_assignments - 1)
+        # assign different room and time slot for an assignment
+        index: int = random.randint(0, len(new_schedule.assignments) - 1)
         new_schedule.assignments[index].room = random.choice(rooms)
         new_schedule.assignments[index].time_slot = random.choice(time_slots)
 
-    return Schedule(new_schedule.assignments)
+    return new_schedule
 
 def initialize_population(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], population_size: int) -> List[Schedule]:
-    population = []
-    
+    population: List[Schedule] = []
+
     for _ in range(population_size):
         population.append(generate_initial_schedule(courses, rooms, time_slots))
-        
+
     return population
 
 def evaluate_population(population: List[Schedule], students: List[Student]) -> List[Tuple[Schedule, float]]:
-    population_objective = []
-    
+    population_objective: List[Tuple[Schedule, float]] = []
+
     for schedule in population:
-        objective_score = objective(schedule, students)
+        objective_score: float = objective(schedule, students)
         population_objective.append((schedule, objective_score))
-        
+    
     return population_objective
