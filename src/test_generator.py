@@ -11,7 +11,7 @@ def generate_time_slots(days: List[str], hours: List[int]) -> List[TimeSlot]:
 
     return time_slots
 
-def generate_test_data(num_courses: int, num_rooms: int, num_students: int) -> Tuple[List[Course], List[Room], List[Student]]:
+def generate_test_data(num_courses: int, num_rooms: int, num_students: int, num_lecturers: int) -> Tuple[List[Course], List[Room], List[Student], List[Lecturer]]:
 
     courses: List[Course] = []
     for i in range(num_courses):
@@ -55,9 +55,16 @@ def generate_test_data(num_courses: int, num_rooms: int, num_students: int) -> T
         
         students.append(Student(student_id, student_course_ids, priorities))
 
-    return courses, rooms, students
+    lecturers: List[Lecturer] = []
+    for i in range(num_lecturers):
+        lecturer_id: str = f"Dosen_{i + 1}"
+        courses_taught: int = random.randint(1, min(num_courses, 5))
+        lecturer_course_ids: List[str] = [c.course_id for c in random.sample(courses, courses_taught)]
+        lecturers.append(Lecturer(lecturer_id, lecturer_course_ids))
 
-def save_data_to_json(courses: List[Course], rooms: List[Room], students: List[Student], file_path: str) -> None:
+    return courses, rooms, students, lecturers
+
+def save_data_to_json(courses: List[Course], rooms: List[Room], students: List[Student], lecturers: List[Lecturer], file_path: str) -> None:
     data: Dict[str, Any] = {
         "kelas_mata_kuliah": [
             {
@@ -78,6 +85,12 @@ def save_data_to_json(courses: List[Course], rooms: List[Room], students: List[S
                 "daftar_mk": s.course_list,
                 "prioritas": s.priority
             } for s in students
+        ],
+        "dosen": [
+            {
+                "dosen_id": l.lecturer_id,
+                "course_list": l.course_list
+            } for l in lecturers
         ]
     }
     
@@ -85,5 +98,8 @@ def save_data_to_json(courses: List[Course], rooms: List[Room], students: List[S
         json.dump(data, f, indent=2)
 
 if __name__ == "__main__":
-    courses, rooms, students = generate_test_data(10, 10, 50)
-    save_data_to_json(courses, rooms, students, "data/semi_large_test.json")
+    courses, rooms, students, lecturers = generate_test_data(15, 10, 50, 6)
+    save_data_to_json(courses, rooms, students, lecturers, "data/small_test.json")
+
+    # courses, rooms, students, lecturers = generate_test_data(30, 10, 300, 20)
+    # save_data_to_json(courses, rooms, students, lecturers, "data/large_test.json")

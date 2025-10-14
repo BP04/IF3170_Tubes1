@@ -2,22 +2,23 @@ import json
 from typing import List, Tuple, Dict, Any, Set
 from models import *
 
-def load_data_from_json(file_path: str) -> Tuple[List[Course], List[Room], List[Student]]:
+def load_data_from_json(file_path: str) -> Tuple[List[Course], List[Room], List[Student], List[Lecturer]]:
     try:
         with open(file_path, 'r') as f:
             data: Dict[str, Any] = json.load(f)
     except FileNotFoundError:
         print(f"Error: The file {file_path} was not found.")
-        return [], [], []
+        return [], [], [], []
     except json.JSONDecodeError:
         print(f"Error: The file {file_path} is not a valid JSON file.")
-        return [], [], []   
+        return [], [], [], []   
 
     courses: List[Course] = [Course(c['kode'], c['jumlah_mahasiswa'], c['sks']) for c in data['kelas_mata_kuliah']]
     rooms: List[Room] = [Room(r['kode'], r['kuota']) for r in data['ruangan']]
     students: List[Student] = [Student(s['nim'], s['daftar_mk'], s['prioritas']) for s in data['mahasiswa']]
+    lecturers: List[Lecturer] = [Lecturer(l['dosen_id'], l['course_list']) for l in data.get('dosen', [])]
 
-    return courses, rooms, students
+    return courses, rooms, students, lecturers
 
 def schedule_table_for_room(schedule: Schedule, room_id: str) -> None:
     day_to_index: Dict[str, int] = {'Senin': 0, 'Selasa': 1, 'Rabu': 2, 'Kamis': 3, 'Jumat': 4}

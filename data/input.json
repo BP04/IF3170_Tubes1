@@ -56,5 +56,19 @@
       "daftar_mk": ["IF3110_K02"],
       "prioritas": [1]
     }
+  ],
+  "dosen": [
+    {
+      "dosen_id": "Dosen_1",
+      "course_list": ["IF3071_K01", "IF3130_K01"]
+    },
+    {
+      "dosen_id": "Dosen_2",
+      "course_list": ["IF3110_K02"]
+    },
+    {
+      "dosen_id": "Dosen_3",
+      "course_list": ["IF3140_K01"]
+    }
   ]
 }

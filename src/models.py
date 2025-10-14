@@ -71,3 +71,11 @@ class Schedule:
             if course_id not in self.course_assignments:
                 self.course_assignments[course_id] = []
             self.course_assignments[course_id].append(assignment)
+
+class Lecturer:
+    lecturer_id: str
+    course_list: List[str]
+    
+    def __init__(self, lecturer_id: str, course_list: List[str]) -> None:
+        self.lecturer_id = lecturer_id
+        self.course_list = course_list

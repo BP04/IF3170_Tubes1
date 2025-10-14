@@ -4,11 +4,11 @@ from copy import deepcopy
 from scheduler import *
 from typing import List, Tuple
 
-def simulated_annealing(initial_schedule: Schedule, students: List[Student], time_slots: List[TimeSlot],
+def simulated_annealing(initial_schedule: Schedule, students: List[Student], lecturers: List[Lecturer], time_slots: List[TimeSlot],
                         rooms: List[Room], initial_temp: float = 1000, cooling_rate: float = 0.95,
                         min_temp: float = 1) -> Tuple[Schedule, float, List[float], List[int], int]:
     current: Schedule = deepcopy(initial_schedule)
-    current_objective: float = objective(current, students)
+    current_objective: float = objective(current, students, lecturers)
     best: Schedule = deepcopy(current)
     best_objective: float = current_objective
 
@@ -22,7 +22,7 @@ def simulated_annealing(initial_schedule: Schedule, students: List[Student], tim
 
     while temp > min_temp:
         neighbor: Schedule = generate_neighbor(current, rooms, time_slots)
-        neighbor_objective: float = objective(neighbor, students)
+        neighbor_objective: float = objective(neighbor, students, lecturers)
         delta: float = neighbor_objective - current_objective
 
         accept_prob: float
