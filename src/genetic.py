@@ -43,9 +43,9 @@ def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]
 def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
     return generate_neighbor(schedule, rooms, time_slots)
 
-def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
+def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
     population: List[Schedule] = initialize_population(courses, rooms, time_slots, population_size)
-    population_objective: List[Tuple[Schedule, float]] = evaluate_population(population, students)
+    population_objective: List[Tuple[Schedule, float]] = evaluate_population(population, students, lecturers)
 
     max_objective_history: List[float] = []
     avg_objective_history: List[float] = []
@@ -76,7 +76,7 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
                 new_population.append(child2)
 
         population = new_population
-        population_objective = evaluate_population(population, students)
+        population_objective = evaluate_population(population, students, lecturers)
 
         for i in range(len(population_objective)):
             if best_schedule[1] < population_objective[i][1]:

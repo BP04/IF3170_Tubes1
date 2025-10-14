@@ -15,7 +15,8 @@ def main() -> None:
     courses: List[Course]
     rooms: List[Room]
     students: List[Student]
-    courses, rooms, students = load_data_from_json('./data/semi_large_test.json')
+    lecturers: List[Lecturer]
+    courses, rooms, students, lecturers = load_data_from_json('./data/semi_large_test.json')
     time_slots: List[TimeSlot] = [TimeSlot(day, hour) for day in ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] 
                   for hour in range(8, 17)]
     
@@ -38,31 +39,31 @@ def main() -> None:
         
         print()
         print("Initial State:")
-        print(f"Initial Objective: {objective(initial_schedule, students):.2f}")
+        print(f"Initial Objective: {objective(initial_schedule, students, lecturers):.2f}")
         visualize_schedule(initial_schedule, rooms)
         print()
 
         choice: str = input("Enter your choice (1-8): ")
 
         if choice == '1':
-            run_steepest_ascent(courses, rooms, time_slots, students)
+            run_steepest_ascent(courses, rooms, time_slots, students, lecturers)
         elif choice == '2':
-            run_stochastic(courses, rooms, time_slots, students)
+            run_stochastic(courses, rooms, time_slots, students, lecturers)
         elif choice == '3':
-            run_sideways_moves(courses, rooms, time_slots, students)
+            run_sideways_moves(courses, rooms, time_slots, students, lecturers)
         elif choice == '4':
-            run_random_restart(courses, rooms, time_slots, students)
+            run_random_restart(courses, rooms, time_slots, students, lecturers)
         elif choice == '5':
-            run_genetic_algorithm(courses, rooms, time_slots, students)
+            run_genetic_algorithm(courses, rooms, time_slots, students, lecturers)
         elif choice == '6':
-            run_simulated_annealing(courses, rooms, time_slots, students)
+            run_simulated_annealing(courses, rooms, time_slots, students, lecturers)
         elif choice == '7':
-            run_steepest_ascent(courses, rooms, time_slots, students)
-            run_stochastic(courses, rooms, time_slots, students)
-            run_sideways_moves(courses, rooms, time_slots, students)
-            run_random_restart(courses, rooms, time_slots, students)
-            run_genetic_algorithm(courses, rooms, time_slots, students)
-            run_simulated_annealing(courses, rooms, time_slots, students)
+            run_steepest_ascent(courses, rooms, time_slots, students, lecturers)
+            run_stochastic(courses, rooms, time_slots, students, lecturers)
+            run_sideways_moves(courses, rooms, time_slots, students, lecturers)
+            run_random_restart(courses, rooms, time_slots, students, lecturers)
+            run_genetic_algorithm(courses, rooms, time_slots, students, lecturers)
+            run_simulated_annealing(courses, rooms, time_slots, students, lecturers)
         elif choice == '8':
             print("Thank you for using this program. See you next time!" + "\n")
             break

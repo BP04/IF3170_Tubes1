@@ -3,11 +3,11 @@ from models import *
 from scheduler import objective, generate_initial_schedule, generate_neighbor
 from typing import List, Tuple
 
-def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int, neighbors_to_check: int) -> Tuple[Schedule, List[float], int, float]:
+def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, neighbors_to_check: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
     
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
-    current_objective: float = objective(current_schedule, students)
+    current_objective: float = objective(current_schedule, students, lecturers)
     objective_history: List[float] = [current_objective]
     
     iterations: int = 0
@@ -18,7 +18,7 @@ def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time
 
         for _ in range(neighbors_to_check):
             neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
-            neighbor_objective: float = objective(neighbor, students)
+            neighbor_objective: float = objective(neighbor, students, lecturers)
             if neighbor_objective > best_neighbor_objective:
                 best_neighbor = neighbor
                 best_neighbor_objective = neighbor_objective
@@ -34,11 +34,11 @@ def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
-def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int) -> Tuple[Schedule, List[float], int, float]:
+def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
 
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
-    current_objective: float = objective(current_schedule, students)
+    current_objective: float = objective(current_schedule, students, lecturers)
     objective_history: List[float] = [current_objective]
 
     iterations: int = 0
@@ -46,7 +46,7 @@ def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slot
         iterations = i + 1
         
         neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
-        neighbor_objective: float = objective(neighbor, students)
+        neighbor_objective: float = objective(neighbor, students, lecturers)
 
         if neighbor_objective > current_objective:
             current_schedule = neighbor
@@ -56,11 +56,11 @@ def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slot
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
-def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
+def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
 
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
-    current_objective: float = objective(current_schedule, students)
+    current_objective: float = objective(current_schedule, students, lecturers)
     objective_history: List[float] = [current_objective]
     
     sideways_moves_count: int = 0
@@ -72,7 +72,7 @@ def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], 
 
         for _ in range(50):
             neighbor: Schedule = generate_neighbor(current_schedule, rooms, time_slots)
-            neighbor_objective: float = objective(neighbor, students)
+            neighbor_objective: float = objective(neighbor, students, lecturers)
             if neighbor_objective > best_neighbor_objective:
                 best_neighbor = neighbor
                 best_neighbor_objective = neighbor_objective
@@ -94,7 +94,7 @@ def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], 
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
-def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], num_restarts: int, max_iter_per_restart: int) -> Tuple[Schedule, List[float], int, float, int]:
+def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], num_restarts: int, max_iter_per_restart: int) -> Tuple[Schedule, List[float], int, float, int]:
     start_time: float = time.time()
     
     global_best_schedule: Schedule | None = None
@@ -109,12 +109,12 @@ def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_
         _: List[float]
         iterations: int
         schedule, _, iterations, _ = steepest_ascent_hill_climbing(
-            courses, rooms, time_slots, students, 
+            courses, rooms, time_slots, students, lecturers,
             max_iterations=max_iter_per_restart, 
             neighbors_to_check=50
         )
         
-        current_objective: float = objective(schedule, students)
+        current_objective: float = objective(schedule, students, lecturers)
         total_iterations += iterations
         
         if current_objective > global_best_objective:

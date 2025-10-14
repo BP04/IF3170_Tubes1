@@ -24,21 +24,39 @@ def priority_weight(priority: int) -> float:
         return 1.25
     return 1.0
 
-def objective(schedule: Schedule, students: List[Student]) -> float:
+def objective(schedule: Schedule, students: List[Student], lecturers: List[Lecturer]) -> float:
     penalty = 0.0
 
     students_in_course: Dict[str, List[Student]] = {}
+    lecturers_in_course: Dict[str, List[Lecturer]] = {}
     for student in students:
         for course_id in student.course_list:
             if course_id not in students_in_course:
                 students_in_course[course_id] = []
             students_in_course[course_id].append(student)
 
+    for lecturer in lecturers:
+        for course_id in lecturer.course_list:
+            if course_id not in lecturers_in_course:
+                lecturers_in_course[course_id] = []
+            lecturers_in_course[course_id].append(lecturer)
+
     for student in students:
         filled: Set[int] = set()
 
         for course_id in student.course_list:
+            current_course_assignments: List[Assignment] = schedule.course_assignments[course_id]
+            for assignment in current_course_assignments:
+                hour_idx: int = assignment.time_slot.hour_index()
+                if hour_idx in filled:
+                    penalty += 1
+                else:
+                    filled.add(hour_idx)
+    
+    for lecturer in lecturers:
+        filled: Set[int] = set()
 
+        for course_id in lecturer.course_list:
             current_course_assignments: List[Assignment] = schedule.course_assignments[course_id]
             for assignment in current_course_assignments:
                 hour_idx: int = assignment.time_slot.hour_index()
@@ -97,11 +115,11 @@ def initialize_population(courses: List[Course], rooms: List[Room], time_slots: 
 
     return population
 
-def evaluate_population(population: List[Schedule], students: List[Student]) -> List[Tuple[Schedule, float]]:
+def evaluate_population(population: List[Schedule], students: List[Student], lecturers: List[Lecturer]) -> List[Tuple[Schedule, float]]:
     population_objective: List[Tuple[Schedule, float]] = []
 
     for schedule in population:
-        objective_score: float = objective(schedule, students)
+        objective_score: float = objective(schedule, students, lecturers)
         population_objective.append((schedule, objective_score))
     
     return population_objective
