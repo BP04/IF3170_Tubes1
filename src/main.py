@@ -15,7 +15,7 @@ def main() -> None:
     courses: List[Course]
     rooms: List[Room]
     students: List[Student]
-    courses, rooms, students = load_data_from_json('./data/input.json')
+    courses, rooms, students = load_data_from_json('./data/semi_large_test.json')
     time_slots: List[TimeSlot] = [TimeSlot(day, hour) for day in ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] 
                   for hour in range(8, 17)]
     
