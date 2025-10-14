@@ -157,4 +157,3 @@ def run_simulated_annealing(courses: List[Course], rooms: List[Room], time_slots
     
     plot_acceptance_probability(iterations, accept_probs, 
                                 "Simulated Annealing: Acceptance Probability (e^(ΔE/T)) vs Iteration")
-
