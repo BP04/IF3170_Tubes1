@@ -50,6 +50,8 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
     max_objective_history: List[float] = []
     avg_objective_history: List[float] = []
 
+    best_schedule: Tuple[Schedule, float] = population_objective[0]
+
     for _ in range(generations):
         # Track statistics
         objective_values: List[float] = [obj for _, obj in population_objective]
@@ -76,14 +78,13 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
         population = new_population
         population_objective = evaluate_population(population, students)
 
-    max_objective_index: int = 0
-    for i in range(len(population_objective)):
-        if population_objective[i][1] > population_objective[max_objective_index][1]:
-            max_objective_index = i
+        for i in range(len(population_objective)):
+            if best_schedule[1] < population_objective[i][1]:
+                best_schedule = population_objective[i]
 
     statistics: Dict[str, List[float]] = {
         'max_objective': max_objective_history,
         'avg_objective': avg_objective_history
     }
 
-    return population_objective[max_objective_index][0], statistics
+    return best_schedule[0], statistics
