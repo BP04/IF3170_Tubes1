@@ -28,7 +28,7 @@ def selection(population_objective: List[Tuple[Schedule, float]]) -> Schedule:
 
     assert False
 
-def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]:
+def crossover(parent1: Schedule, parent2: Schedule, students: List[Student], lecturers: List[Lecturer]) -> Tuple[Schedule, Schedule]:
     child1: Schedule = copy.deepcopy(parent1)
     child2: Schedule = copy.deepcopy(parent2)
 
@@ -38,14 +38,21 @@ def crossover(parent1: Schedule, parent2: Schedule) -> Tuple[Schedule, Schedule]
         child1.assignments[i].room, child2.assignments[i].room = child2.assignments[i].room, child1.assignments[i].room
         child1.assignments[i].time_slot, child2.assignments[i].time_slot = child2.assignments[i].time_slot, child1.assignments[i].time_slot
     
+    child1 = Schedule(child1.assignments, students, lecturers)
+    child2 = Schedule(child2.assignments, students, lecturers)
+    
     return child1, child2
 
-def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot]) -> Schedule:
-    return generate_neighbor(schedule, rooms, time_slots)
+def mutation(schedule: Schedule, rooms: List[Room], time_slots: List[TimeSlot],
+             current_objective: float, students: List[Student], lecturers: List[Lecturer],
+             students_in_course: Dict[str, List[Student]], lecturers_in_course: Dict[str, List[Lecturer]]) -> Tuple[Schedule, float]:
+    return generate_neighbor(schedule, rooms, time_slots, current_objective, students, lecturers, students_in_course, lecturers_in_course)
 
-def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
-    population: List[Schedule] = initialize_population(courses, rooms, time_slots, population_size)
-    population_objective: List[Tuple[Schedule, float]] = evaluate_population(population, students, lecturers)
+def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], 
+                     students: List[Student], lecturers: List[Lecturer],
+                     students_in_course: Dict[str, List[Student]], lecturers_in_course: Dict[str, List[Lecturer]],
+                     population_size: int, generations: int) -> Tuple[Schedule, Dict[str, List[float]]]:
+    population_objective: List[Tuple[Schedule, float]] = initialize_population(courses, rooms, time_slots, students, lecturers, students_in_course, lecturers_in_course, population_size)
 
     max_objective_history: List[float] = []
     avg_objective_history: List[float] = []
@@ -58,7 +65,7 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
         max_objective_history.append(max(objective_values))
         avg_objective_history.append(sum(objective_values) / len(objective_values))
 
-        new_population: List[Schedule] = []
+        new_population_objective: List[Tuple[Schedule, float]] = []
 
         for _ in range(population_size // 2):
             parent1: Schedule = selection(population_objective)
@@ -66,17 +73,19 @@ def genetic_algorithm(courses: List[Course], rooms: List[Room], time_slots: List
 
             child1: Schedule
             child2: Schedule
-            child1, child2 = crossover(parent1, parent2)
+            child1, child2 = crossover(parent1, parent2, students, lecturers)
 
-            child1 = mutation(child1, rooms, time_slots)
-            child2 = mutation(child2, rooms, time_slots)
+            child1_obj: float = objective(child1, students, lecturers, students_in_course, lecturers_in_course)
+            child2_obj: float = objective(child2, students, lecturers, students_in_course, lecturers_in_course)
 
-            new_population.append(child1)
-            if len(new_population) < population_size:
-                new_population.append(child2)
+            child1, child1_obj = mutation(child1, rooms, time_slots, child1_obj, students, lecturers, students_in_course, lecturers_in_course)
+            child2, child2_obj = mutation(child2, rooms, time_slots, child2_obj, students, lecturers, students_in_course, lecturers_in_course)
 
-        population = new_population
-        population_objective = evaluate_population(population, students, lecturers)
+            new_population_objective.append((child1, child1_obj))
+            if len(new_population_objective) < population_size:
+                new_population_objective.append((child2, child2_obj))
+
+        population_objective = new_population_objective
 
         for i in range(len(population_objective)):
             if best_schedule[1] < population_objective[i][1]:

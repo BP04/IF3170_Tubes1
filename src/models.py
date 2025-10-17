@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Set
 
 class Course:
     course_id: str
@@ -48,6 +48,13 @@ class Student:
         for course_id, priority_val in zip(course_list, priority):
             self.priority_map[course_id] = priority_val
 
+class Lecturer:
+    lecturer_id: str
+    course_list: List[str]
+    
+    def __init__(self, lecturer_id: str, course_list: List[str]) -> None:
+        self.lecturer_id = lecturer_id
+        self.course_list = course_list
 class Assignment:
     course: Course
     time_slot: TimeSlot
@@ -61,8 +68,11 @@ class Assignment:
 class Schedule:
     assignments: List[Assignment]
     course_assignments: Dict[str, List[Assignment]]
+    room_time_courses: Dict[Tuple[str, int], List[str]]
+    student_schedules: Dict[str, Set[int]]
+    lecturer_schedules: Dict[str, Set[int]]
     
-    def __init__(self, assignments: List[Assignment]) -> None:
+    def __init__(self, assignments: List[Assignment], students: List[Student], lecturers: List[Lecturer]) -> None:
         self.assignments = assignments
 
         self.course_assignments = {}  # course_id -> list of assignments
@@ -71,11 +81,26 @@ class Schedule:
             if course_id not in self.course_assignments:
                 self.course_assignments[course_id] = []
             self.course_assignments[course_id].append(assignment)
+        
+        self.room_time_courses = {}  # (room_id, hour_index) -> list of course_ids
+        for assignment in assignments:
+            room_id: str = assignment.room.room_id
+            hour_index: int = assignment.time_slot.hour_index()
+            course_id: str = assignment.course.course_id
+            if (room_id, hour_index) not in self.room_time_courses:
+                self.room_time_courses[(room_id, hour_index)] = []
+            self.room_time_courses[(room_id, hour_index)].append(course_id)
 
-class Lecturer:
-    lecturer_id: str
-    course_list: List[str]
-    
-    def __init__(self, lecturer_id: str, course_list: List[str]) -> None:
-        self.lecturer_id = lecturer_id
-        self.course_list = course_list
+        self.student_schedules = {}
+        for student in students:
+            self.student_schedules[student.student_id] = set()
+            for course_id in student.course_list:
+                for assignment in self.course_assignments[course_id]:
+                    self.student_schedules[student.student_id].add(assignment.time_slot.hour_index())
+
+        self.lecturer_schedules = {}
+        for lecturer in lecturers:
+            self.lecturer_schedules[lecturer.lecturer_id] = set()
+            for course_id in lecturer.course_list:
+                for assignment in self.course_assignments[course_id]:
+                    self.lecturer_schedules[lecturer.lecturer_id].add(assignment.time_slot.hour_index())
