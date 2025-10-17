@@ -5,9 +5,11 @@ from models import *
 from scheduler import objective, generate_initial_schedule
 from utils import visualize_schedule
 from hill_climbing import (
-    steepest_ascent_hill_climbing,
+    steepest_ascent_hill_climbing_sampling,
+    steepest_ascent_hill_climbing_full,
     stochastic_hill_climbing,
-    hill_climbing_with_sideways_moves,
+    hill_climbing_with_sideways_moves_sampling,
+    hill_climbing_with_sideways_moves_full,
     random_restart_hill_climbing
 )
 from genetic import genetic_algorithm
@@ -48,12 +50,12 @@ def plot_genetic_statistics(max_objective: List[float], avg_objective: List[floa
     plt.show()
 
 def run_steepest_ascent(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
-    print("\n1. Steepest-Ascent Hill-Climbing")
+    print("\n1. Steepest-Ascent Hill-Climbing (Sampling)")
     final_schedule: Schedule
     obj_history: List[float]
     iters: int
     duration: float
-    final_schedule, obj_history, iters, duration = steepest_ascent_hill_climbing(
+    final_schedule, obj_history, iters, duration = steepest_ascent_hill_climbing_sampling(
         courses, rooms, time_slots, students, lecturers, max_iterations=1000, neighbors_to_check=50
     )
     print(f"\nFinal Result:")
@@ -61,7 +63,23 @@ def run_steepest_ascent(courses: List[Course], rooms: List[Room], time_slots: Li
     print(f"  - Iterations until stop: {iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
-    plot_objective_history(obj_history, "Steepest-Ascent Hill-Climbing: Objective vs Iteration")
+    plot_objective_history(obj_history, "Steepest-Ascent Hill-Climbing (Sampling): Objective vs Iteration")
+
+def run_steepest_ascent_full(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
+    print("\n1b. Steepest-Ascent Hill-Climbing (Full)")
+    final_schedule: Schedule
+    obj_history: List[float]
+    iters: int
+    duration: float
+    final_schedule, obj_history, iters, duration = steepest_ascent_hill_climbing_full(
+        courses, rooms, time_slots, students, lecturers, max_iterations=1000
+    )
+    print(f"\nFinal Result:")
+    print(f"  - Final objective: {objective(final_schedule, students, lecturers):.2f}")
+    print(f"  - Iterations until stop: {iters}")
+    print(f"  - Search Duration: {duration:.4f} seconds")
+    visualize_schedule(final_schedule, rooms)
+    plot_objective_history(obj_history, "Steepest-Ascent Hill-Climbing (Full): Objective vs Iteration")
 
 def run_stochastic(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
     print("\n2. Stochastic Hill-Climbing")
@@ -80,12 +98,12 @@ def run_stochastic(courses: List[Course], rooms: List[Room], time_slots: List[Ti
     plot_objective_history(obj_history, "Stochastic Hill-Climbing: Objective vs Iteration")
 
 def run_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
-    print("\n3. Hill-Climbing with Sideways Moves")
+    print("\n3. Hill-Climbing with Sideways Moves (Sampling)")
     final_schedule: Schedule
     obj_history: List[float]
     iters: int
     duration: float
-    final_schedule, obj_history, iters, duration = hill_climbing_with_sideways_moves(
+    final_schedule, obj_history, iters, duration = hill_climbing_with_sideways_moves_sampling(
         courses, rooms, time_slots, students, lecturers, max_iterations=1000, max_sideways_moves=100
     )
     print(f"\nFinal Result:")
@@ -93,7 +111,23 @@ def run_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: Lis
     print(f"  - Iterations until stop: {iters}")
     print(f"  - Search Duration: {duration:.4f} seconds")
     visualize_schedule(final_schedule, rooms)
-    plot_objective_history(obj_history, "Hill-Climbing with Sideways Moves: Objective vs Iteration")
+    plot_objective_history(obj_history, "Hill-Climbing with Sideways Moves (Sampling): Objective vs Iteration")
+
+def run_sideways_moves_full(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
+    print("\n3b. Hill-Climbing with Sideways Moves (Full)")
+    final_schedule: Schedule
+    obj_history: List[float]
+    iters: int
+    duration: float
+    final_schedule, obj_history, iters, duration = hill_climbing_with_sideways_moves_full(
+        courses, rooms, time_slots, students, lecturers, max_iterations=1000, max_sideways_moves=100
+    )
+    print(f"\nFinal Result:")
+    print(f"  - Final objective: {objective(final_schedule, students, lecturers):.2f}")
+    print(f"  - Iterations until stop: {iters}")
+    print(f"  - Search Duration: {duration:.4f} seconds")
+    visualize_schedule(final_schedule, rooms)
+    plot_objective_history(obj_history, "Hill-Climbing with Sideways Moves (Full): Objective vs Iteration")
     
 def run_random_restart(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer]) -> None:
     print("\n4. Random-Restart Hill-Climbing")

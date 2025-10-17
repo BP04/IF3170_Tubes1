@@ -2,8 +2,9 @@ import time
 from models import *
 from scheduler import objective, generate_initial_schedule, generate_neighbor
 from typing import List, Tuple
+import copy
 
-def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, neighbors_to_check: int) -> Tuple[Schedule, List[float], int, float]:
+def steepest_ascent_hill_climbing_sampling(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, neighbors_to_check: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
     
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
@@ -29,6 +30,61 @@ def steepest_ascent_hill_climbing(courses: List[Course], rooms: List[Room], time
             objective_history.append(current_objective)
         else:
             print(f"-> Steepest-Ascent: Local optimum reached at iteration {iterations}.")
+            break
+
+    duration: float = time.time() - start_time
+    return current_schedule, objective_history, iterations, duration
+
+def steepest_ascent_hill_climbing_full(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int) -> Tuple[Schedule, List[float], int, float]:
+    start_time: float = time.time()
+    
+    current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    current_objective: float = objective(current_schedule, students, lecturers)
+    objective_history: List[float] = [current_objective]
+    
+    iterations: int = 0
+    for i in range(max_iterations):
+        iterations = i + 1
+        best_neighbor: Schedule | None = None
+        best_neighbor_objective: float = -float('inf')
+        
+        num_assignments = len(current_schedule.assignments)
+
+        for ass_i in range(num_assignments):
+            for ass_j in range(ass_i + 1, num_assignments):
+                neighbor = copy.deepcopy(current_schedule)
+                
+                neighbor.assignments[ass_i].room, neighbor.assignments[ass_j].room = neighbor.assignments[ass_j].room, neighbor.assignments[ass_i].room
+                neighbor.assignments[ass_i].time_slot, neighbor.assignments[ass_j].time_slot = neighbor.assignments[ass_j].time_slot, neighbor.assignments[ass_i].time_slot
+                
+                neighbor_objective: float = objective(neighbor, students, lecturers)
+                if neighbor_objective > best_neighbor_objective:
+                    best_neighbor = neighbor
+                    best_neighbor_objective = neighbor_objective
+
+        for ass_i in range(num_assignments):
+            original_room_id = current_schedule.assignments[ass_i].room.room_id
+            original_time_slot_idx = current_schedule.assignments[ass_i].time_slot.hour_index()
+            for room in rooms:
+                for time_slot in time_slots:
+                    if room.room_id == original_room_id and time_slot.hour_index() == original_time_slot_idx:
+                        continue
+                    
+                    neighbor = copy.deepcopy(current_schedule)
+                    neighbor.assignments[ass_i].room = room
+                    neighbor.assignments[ass_i].time_slot = time_slot
+                    
+                    neighbor_objective: float = objective(neighbor, students, lecturers)
+                    if neighbor_objective > best_neighbor_objective:
+                        best_neighbor = neighbor
+                        best_neighbor_objective = neighbor_objective
+
+        if best_neighbor_objective > current_objective:
+            current_schedule = best_neighbor  # type: ignore
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+        else:
+            print(f"-> Steepest-Ascent (Full): Local optimum reached at iteration {iterations}.")
             break
 
     duration: float = time.time() - start_time
@@ -65,7 +121,7 @@ def stochastic_hill_climbing(courses: List[Course], rooms: List[Room], time_slot
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
-def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
+def hill_climbing_with_sideways_moves_sampling(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
     start_time: float = time.time()
 
     current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
@@ -104,6 +160,69 @@ def hill_climbing_with_sideways_moves(courses: List[Course], rooms: List[Room], 
     duration: float = time.time() - start_time
     return current_schedule, objective_history, iterations, duration
 
+def hill_climbing_with_sideways_moves_full(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], max_iterations: int, max_sideways_moves: int) -> Tuple[Schedule, List[float], int, float]:
+    start_time: float = time.time()
+
+    current_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    current_objective: float = objective(current_schedule, students, lecturers)
+    objective_history: List[float] = [current_objective]
+    
+    sideways_moves_count: int = 0
+    iterations: int = 0
+    for i in range(max_iterations):
+        iterations = i + 1
+        best_neighbor: Schedule | None = None
+        best_neighbor_objective: float = -float('inf')
+
+        num_assignments = len(current_schedule.assignments)
+
+        for ass_i in range(num_assignments):
+            for ass_j in range(ass_i + 1, num_assignments):
+                neighbor = copy.deepcopy(current_schedule)
+                neighbor.assignments[ass_i].room, neighbor.assignments[ass_j].room = neighbor.assignments[ass_j].room, neighbor.assignments[ass_i].room
+                neighbor.assignments[ass_i].time_slot, neighbor.assignments[ass_j].time_slot = neighbor.assignments[ass_j].time_slot, neighbor.assignments[ass_i].time_slot
+                
+                neighbor_objective: float = objective(neighbor, students, lecturers)
+                if neighbor_objective > best_neighbor_objective:
+                    best_neighbor = neighbor
+                    best_neighbor_objective = neighbor_objective
+
+        for ass_i in range(num_assignments):
+            original_room_id = current_schedule.assignments[ass_i].room.room_id
+            original_time_slot_idx = current_schedule.assignments[ass_i].time_slot.hour_index()
+            for room in rooms:
+                for time_slot in time_slots:
+                    if room.room_id == original_room_id and time_slot.hour_index() == original_time_slot_idx:
+                        continue
+                    
+                    neighbor = copy.deepcopy(current_schedule)
+                    neighbor.assignments[ass_i].room = room
+                    neighbor.assignments[ass_i].time_slot = time_slot
+                    
+                    neighbor_objective: float = objective(neighbor, students, lecturers)
+                    if neighbor_objective > best_neighbor_objective:
+                        best_neighbor = neighbor
+                        best_neighbor_objective = neighbor_objective
+        
+        if best_neighbor_objective > current_objective:
+            assert best_neighbor is not None
+            current_schedule = best_neighbor
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+            sideways_moves_count = 0
+        elif best_neighbor_objective == current_objective and sideways_moves_count < max_sideways_moves:
+            assert best_neighbor is not None
+            current_schedule = best_neighbor
+            current_objective = best_neighbor_objective
+            objective_history.append(current_objective)
+            sideways_moves_count += 1
+        else:
+            print(f"-> Sideways-Move (Full): Optimum reached or sideways limit exceeded at iteration {iterations}.")
+            break
+
+    duration: float = time.time() - start_time
+    return current_schedule, objective_history, iterations, duration
+
 def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_slots: List[TimeSlot], students: List[Student], lecturers: List[Lecturer], num_restarts: int, max_iter_per_restart: int) -> Tuple[Schedule, List[float], int, float, int]:
     start_time: float = time.time()
     
@@ -119,7 +238,7 @@ def random_restart_hill_climbing(courses: List[Course], rooms: List[Room], time_
         schedule: Schedule
         _: List[float]
         iterations: int
-        schedule, _, iterations, _ = steepest_ascent_hill_climbing(
+        schedule, _, iterations, _ = steepest_ascent_hill_climbing_sampling(
             courses, rooms, time_slots, students, lecturers,
             max_iterations=max_iter_per_restart, 
             neighbors_to_check=50
