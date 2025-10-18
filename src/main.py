@@ -18,13 +18,52 @@ def main() -> None:
     rooms: List[Room]
     students: List[Student]
     lecturers: List[Lecturer]
-    courses, rooms, students, lecturers = load_data_from_json('./data/semi_large_test.json')
-    time_slots: List[TimeSlot] = [TimeSlot(day, hour) for day in ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] 
-                  for hour in range(8, 17)]
     
     while True:
-        initial_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+        file_options = {
+            '1': '../data/input.json',
+            '2': '../data/semi_large_test.json',
+            '3': '../data/large_test.json'
+        }
+        
+        print("\n" + "~"*75)
+        print(" Please select the input file to use for this session:")
+        print("~"*75)
+        print("  1. Standard Test (input.json)")
+        print("  2. Semi-Large Test (semi_large_test.json)")
+        print("  3. Large Test (large_test.json)")
+        print("  4. Enter a custom file path")
+        print("  5. Exit Program")
+        print("~"*75)
+        
+        file_choice = input("Enter your choice (1-5): ")
 
+        file_to_load = ""
+        if file_choice in file_options:
+            file_to_load = file_options[file_choice]
+        elif file_choice == '4':
+            print("  Add '../data/' as the beginning of the path if the file is in the data folder.")
+            file_to_load = input("  Enter the custom file path: ")
+        elif file_choice == '5':
+            print("Exiting program.")
+            return
+        else:
+            print("Invalid choice. Please try again.")
+            continue
+
+        courses, rooms, students, lecturers = load_data_from_json(file_to_load)
+
+        if courses:
+            print(f"-> File '{file_to_load}' loaded successfully.\n")
+            break
+        else:
+            print("Please check the path and try again.")
+
+    time_slots: List[TimeSlot] = [TimeSlot(day, hour) for day in ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] 
+                                   for hour in range(8, 17)]
+    initial_schedule: Schedule = generate_initial_schedule(courses, rooms, time_slots)
+    
+    while True:
         print("\n" + "~"*75)
         print(" Solving the Weekly Class Scheduling Problem with Local Search Algorithms")
         print("         Developed by: Tubes1 - K1 (13523019, 13523059, 13523067)")
@@ -47,25 +86,25 @@ def main() -> None:
         visualize_schedule(initial_schedule, rooms)
         print()
 
-        choice: str = input("Enter your choice (1-10): ")
+        algo_choice: str = input("Enter your choice (1-10): ")
 
-        if choice == '1':
+        if algo_choice == '1':
             run_steepest_ascent(courses, rooms, time_slots, students, lecturers)
-        elif choice == '2':
+        elif algo_choice == '2':
             run_steepest_ascent_full(courses, rooms, time_slots, students, lecturers)
-        elif choice == '3':
+        elif algo_choice == '3':
             run_stochastic(courses, rooms, time_slots, students, lecturers)
-        elif choice == '4':
+        elif algo_choice == '4':
             run_sideways_moves(courses, rooms, time_slots, students, lecturers)
-        elif choice == '5':
+        elif algo_choice == '5':
             run_sideways_moves_full(courses, rooms, time_slots, students, lecturers)
-        elif choice == '6':
+        elif algo_choice == '6':
             run_random_restart(courses, rooms, time_slots, students, lecturers)
-        elif choice == '7':
+        elif algo_choice == '7':
             run_genetic_algorithm(courses, rooms, time_slots, students, lecturers)
-        elif choice == '8':
+        elif algo_choice == '8':
             run_simulated_annealing(courses, rooms, time_slots, students, lecturers)
-        elif choice == '9':
+        elif algo_choice == '9':
             run_steepest_ascent(courses, rooms, time_slots, students, lecturers)
             run_steepest_ascent_full(courses, rooms, time_slots, students, lecturers)
             run_stochastic(courses, rooms, time_slots, students, lecturers)
@@ -74,13 +113,11 @@ def main() -> None:
             run_random_restart(courses, rooms, time_slots, students, lecturers)
             run_genetic_algorithm(courses, rooms, time_slots, students, lecturers)
             run_simulated_annealing(courses, rooms, time_slots, students, lecturers)
-        elif choice == '10':
+        elif algo_choice == '10':
             print("Thank you for using this program. See you next time!" + "\n")
             break
         else:
             print("Invalid choice. Please enter a number between 1 and 10.")
-
-        print("KELAR")
 
 if __name__ == "__main__":
     main()
