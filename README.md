@@ -45,6 +45,12 @@ Program yang dirancang memiliki beberapa fitur :
 - Python dengan versi >=3.10
 - matplotlib dengan versi >=3.7.0
 
+Lakukan
+```shell
+pip install -r requirements.txt
+```
+untuk mengunduh semua library yang diperlukan
+
 ### Cara Instalasi dan Penggunaan Program
 #### 1. Instalasi (melalui terminal atau IDE)
 ```bash
