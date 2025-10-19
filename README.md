@@ -45,9 +45,27 @@ Program yang dirancang memiliki beberapa fitur :
 - Python dengan versi >=3.10
 - matplotlib dengan versi >=3.7.0
 
-### Cara Menjalankan Program
+### Cara Instalasi dan Penggunaan Program
+#### 1. Clone repository (melalui terminal atau IDE)
+```bash
+git clone https://github.com/BP04/IF3170_Tubes1.git
+cd IF3170_Tubes1
+```
+#### 2. Unduh requirements
+```bash
+pip install -r requirements.txt
+```
 
-```shell
+#### 3. Penggunaan
+
+```bash
 cd src
 python main.py
 ```
+
+### Pembagian Tugas
+| NIM | Pembagian Tugas |
+| :---: | :---: |
+| 13523019 | Implementasi kode dan penjelasan Algoritma Hill-Climbing, laporan, eksperimen dan analisis large testing, kesimpulan dan saran |
+| 13523059 | Implementasi kode dan penjelasan Algoritma Simulated Annealing, laporan, eksperimen dan analisis input spek, semi-large testing. |
+| 13523067 | Implementasi utilities, objective function, neighbor generator, dan genetic algorithm. |
