@@ -45,21 +45,20 @@ Program yang dirancang memiliki beberapa fitur :
 - Python dengan versi >=3.10
 - matplotlib dengan versi >=3.7.0
 
-Lakukan
-```shell
-pip install -r requirements.txt
-```
-untuk mengunduh semua library yang diperlukan
-
 ### Cara Instalasi dan Penggunaan Program
-#### 1. Instalasi (melalui terminal atau IDE)
+#### 1. Clone repository (melalui terminal atau IDE)
 ```bash
 git clone https://github.com/BP04/IF3170_Tubes1.git
 cd IF3170_Tubes1
 ```
-#### 2. Penggunaan
+#### 2. Unduh requirements
+```bash
+pip install -r requirements.txt
+```
 
-```shell
+#### 3. Penggunaan
+
+```bash
 cd src
 python main.py
 ```
